@@ -69,6 +69,8 @@ described in [PLAN.md §1](PLAN.md). Key decisions are recorded in [`docs/adr`](
 Saving back to the original file uses the File System Access API (Chrome, Edge, Opera).
 In Firefox and Safari, scripts are kept in the browser and **Save** downloads a copy.
 
-**iPad / iPhone:** **Open script** shows the Files picker. iPadOS can't filter by `.fountain`
-(the extension has no system file type), so the picker shows all files and the app checks
-the extension after you choose one. Saving downloads the script to Files › Downloads.
+**iPad, iPhone and Android:** **Open script** shows the system file picker. Mobile pickers
+can't filter by `.fountain` (the extension has no registered system file type or MIME type), so
+the picker shows all files and the app checks the file after you choose it: Fountain extensions
+are accepted, and so is extension-less plain text (some Android providers drop the extension).
+Saving downloads the script (Files › Downloads on iOS, the Downloads folder on Android).

@@ -1,9 +1,6 @@
+import { filePickerTypes } from "../platform";
 import { readFile } from "../read-file";
 import { ScriptError, type FileAccess, type HandleFileIO } from "../types";
-
-const PICKER_TYPES: FilePickerAcceptType[] = [
-  { description: "Fountain screenplay", accept: { "text/plain": [".fountain", ".spmd", ".txt"] } },
-];
 
 const isAbort = (error: unknown) => error instanceof DOMException && error.name === "AbortError";
 
@@ -45,7 +42,7 @@ export function createFsAccessAdapter(): FileAccess {
     handles: handleIO,
     async open() {
       try {
-        const [handle] = await window.showOpenFilePicker!({ types: PICKER_TYPES, id: "fountain" });
+        const [handle] = await window.showOpenFilePicker!({ types: filePickerTypes(), id: "fountain" });
         return handle ? handleIO.read(handle) : null;
       } catch (error) {
         if (isAbort(error)) return null;
@@ -54,7 +51,7 @@ export function createFsAccessAdapter(): FileAccess {
     },
     async saveAs(text, suggestedName) {
       try {
-        const handle = await window.showSaveFilePicker!({ suggestedName, types: PICKER_TYPES, id: "fountain" });
+        const handle = await window.showSaveFilePicker!({ suggestedName, types: filePickerTypes(), id: "fountain" });
         await handleIO.write(handle, text);
         return { fileName: handle.name, handle };
       } catch (error) {
