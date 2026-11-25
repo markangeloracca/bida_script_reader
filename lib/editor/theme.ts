@@ -3,7 +3,8 @@ import { EditorView } from "@codemirror/view";
 /**
  * Screenplay-style editor theme. Colours come from CSS variables defined in
  * globals.css, so the editor follows light/dark mode without reconfiguring.
- * Indents are in `ch` (Courier: 10 characters per inch, 1.5in left margin).
+ * Indents are percentages of the 64ch column (e.g. character cue 22ch ≈ 34%),
+ * so the screenplay shape is kept on narrow phone screens too.
  */
 export const fountainTheme = EditorView.theme({
   "&": {
@@ -21,10 +22,9 @@ export const fountainTheme = EditorView.theme({
     // CodeMirror makes the content flex-grow; pin it to a centred screenplay column.
     flexGrow: "0",
     flexShrink: "1",
-    width: "min(64ch, 100%)",
-    maxWidth: "64ch",
+    width: "min(calc(64ch + 2.5rem), 100%)",
     margin: "0 auto",
-    padding: "3rem 1ch 40vh",
+    padding: "2.5rem 1.25rem 40vh",
     caretColor: "var(--script-ink)",
   },
   ".cm-line": { padding: "0" },
@@ -35,10 +35,10 @@ export const fountainTheme = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "transparent" },
 
   ".cm-fountain-scene-heading": { fontWeight: "700", textTransform: "uppercase", paddingTop: "1.2em" },
-  ".cm-fountain-character": { paddingLeft: "22ch", textTransform: "uppercase" },
-  ".cm-fountain-dialogue": { paddingLeft: "10ch", paddingRight: "15ch" },
-  ".cm-fountain-parenthetical": { paddingLeft: "16ch", paddingRight: "19ch" },
-  ".cm-fountain-lyrics": { paddingLeft: "10ch", fontStyle: "italic" },
+  ".cm-fountain-character": { paddingLeft: "34%", textTransform: "uppercase" },
+  ".cm-fountain-dialogue": { paddingLeft: "16%", paddingRight: "20%" },
+  ".cm-fountain-parenthetical": { paddingLeft: "25%", paddingRight: "25%" },
+  ".cm-fountain-lyrics": { paddingLeft: "16%", fontStyle: "italic" },
   ".cm-fountain-transition": { textAlign: "right", textTransform: "uppercase" },
   ".cm-fountain-centered": { textAlign: "center" },
   ".cm-fountain-page-break": { color: "var(--script-muted)", textAlign: "center" },

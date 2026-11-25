@@ -9,7 +9,16 @@ export { isUpperCase } from "./element-registry";
 export { findInlineRanges, toPlainText, toSpans, type InlineKind, type InlineRange, type Span } from "./inline";
 export { buildOutline, sceneAtLine, type OutlineItem } from "./outline";
 export { computeStats, type CharacterStat, type ScriptStats } from "./stats";
-export type { Block, DialogueBlock, DialoguePart, DualDialogueBlock, PageElement } from "./blocks";
-export { paginate, pageAtLine, lineBasedPagination, measure, type Page, type PaginationStrategy } from "./paginate";
+export { buildBlocks, type Block, type DialogueBlock, type DialoguePart, type DualDialogueBlock, type PageElement } from "./blocks";
+export {
+  paginate,
+  paginateBlocks,
+  pageAtLine,
+  pageStartLines,
+  lineBasedPagination,
+  measure,
+  type Page,
+  type PaginationStrategy,
+} from "./paginate";
 export { PAPER_SIZES, type PaperSize } from "./paper";
 export { getTitle, titleValue } from "./title-page";

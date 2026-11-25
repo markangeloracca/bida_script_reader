@@ -11,6 +11,10 @@ type, and read a paginated, print-ready version side by side. Everything stays i
   character & scene autocomplete, dimmed notes/boneyard/markers, focus (typewriter) mode
 - **Reader**: paginated US Letter / A4 pages in Courier Prime, title page, scene numbers, dual dialogue,
   `(MORE)` / `(CONT'D)` splits, print / save as PDF
+- **Mobile reading**: on phones the reader switches to a _continuous_ layout — the screenplay reflowed to
+  the screen at a comfortable size (text size setting applies), with page markers, scene numbers in the margin
+  and the reading position tracked in the status bar and outline. Choose _Automatic / Printed pages /
+  Continuous_ under ⋮ › Reading layout on any device
 - **Edit / Split / Read** views, outline navigator, ⌘K command palette, statistics
 - **Recent scripts** stored in IndexedDB (no database); save back to the original file in Chromium browsers
 - **Light / dark / system** theme

@@ -1,4 +1,4 @@
-import type { ViewMode } from "@/lib/store/settings-store";
+import type { ReaderLayout, ViewMode } from "@/lib/store/settings-store";
 
 /**
  * Commands shared by the header menu, the command palette and keyboard
@@ -15,6 +15,7 @@ export interface WorkspaceCommands {
   toggleOutline(): void;
   toggleSceneNumbers(): void;
   toggleFocusMode(): void;
+  setReaderLayout(layout: ReaderLayout): void;
   showStats(): void;
   showPalette(): void;
 }

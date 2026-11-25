@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useHotkeys } from "@/hooks/use-hotkeys";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useIsMobile } from "@/hooks/use-media-query";
 import { useOpenScript } from "@/hooks/use-open-script";
 import { useScriptActions } from "@/hooks/use-script-actions";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
-import { useSettingsStore, type ViewMode } from "@/lib/store/settings-store";
+import { resolveViewMode, useSettingsStore, type ViewMode } from "@/lib/store/settings-store";
 import { CommandPalette } from "./command-palette";
 import { EditorPanel } from "./editor-panel";
 import { OutlinePanel } from "./outline-panel";
@@ -43,7 +43,7 @@ export default function Workspace({ id, initialMode }: { id: string; initialMode
   const actions = useScriptActions();
   const opener = useOpenScript();
   const settings = useSettingsStore();
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isMobile = useIsMobile();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [outlineSheetOpen, setOutlineSheetOpen] = useState(false);
@@ -62,13 +62,14 @@ export default function Workspace({ id, initialMode }: { id: string; initialMode
         store.setViewMode(mode);
         if (store.focusMode) store.toggleFocusMode();
       },
-      toggleOutline: () => (isDesktop ? useSettingsStore.getState().toggleOutline() : setOutlineSheetOpen((open) => !open)),
+      toggleOutline: () => (isMobile ? setOutlineSheetOpen((open) => !open) : useSettingsStore.getState().toggleOutline()),
       toggleSceneNumbers: () => useSettingsStore.getState().toggleSceneNumbers(),
       toggleFocusMode: () => useSettingsStore.getState().toggleFocusMode(),
+      setReaderLayout: (layout) => useSettingsStore.getState().setReaderLayout(layout),
       showStats: () => setStatsOpen(true),
       showPalette: () => setPaletteOpen(true),
     }),
-    [actions, opener, router, isDesktop],
+    [actions, opener, router, isMobile],
   );
 
   useHotkeys({
@@ -87,13 +88,12 @@ export default function Workspace({ id, initialMode }: { id: string; initialMode
   if (status === "missing") return <MissingScript />;
 
   const focus = settings.focusMode;
-  // Split view is too cramped on small screens; focus mode always edits full-width.
-  const mode: ViewMode = focus ? "edit" : !isDesktop && settings.viewMode === "split" ? "edit" : settings.viewMode;
-  const showOutline = isDesktop && settings.showOutline && !focus;
+  const mode = resolveViewMode(settings.viewMode, { isMobile, focusMode: focus });
+  const showOutline = !isMobile && settings.showOutline && !focus;
 
   return (
     <div className="flex h-dvh flex-col">
-      {!focus && <WorkspaceHeader commands={commands} canSaveInPlace={actions.canSaveInPlace} viewMode={mode} />}
+      {!focus && <WorkspaceHeader commands={commands} canSaveInPlace={actions.canSaveInPlace} viewMode={mode} isMobile={isMobile} />}
 
       <main className="min-h-0 flex-1">
         <ResizablePanelGroup orientation="horizontal">
@@ -120,13 +120,21 @@ export default function Workspace({ id, initialMode }: { id: string; initialMode
       </main>
 
       {focus ? (
-        <p className="pointer-events-none fixed right-4 bottom-3 text-xs text-muted-foreground">Focus mode · Esc to exit</p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={commands.toggleFocusMode}
+          className="fixed right-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] opacity-60 hover:opacity-100 focus-visible:opacity-100"
+        >
+          Exit focus mode
+          {!isMobile && <span className="text-muted-foreground">Esc</span>}
+        </Button>
       ) : (
-        <StatusBar />
+        <StatusBar reading={mode === "read"} />
       )}
 
       <Sheet open={outlineSheetOpen} onOpenChange={setOutlineSheetOpen}>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-[85vw] max-w-80 p-0 pt-[env(safe-area-inset-top)]">
           <SheetTitle className="sr-only">Outline</SheetTitle>
           <OutlinePanel onNavigate={() => setOutlineSheetOpen(false)} />
         </SheetContent>

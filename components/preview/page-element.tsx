@@ -3,13 +3,14 @@ import { cn } from "@/lib/utils";
 import { InlineText } from "./inline-text";
 
 /**
- * Screenplay geometry, relative to the 1.5in left margin:
- * character 2.2in, parenthetical 1.6in, dialogue 1.0in (3.5in wide).
+ * Indents and widths come from CSS variables (see `geometry.ts`), so the same
+ * markup renders printed pages and the continuous mobile layout.
  */
 function Dialogue({ block, dual = false }: { block: DialogueBlock; dual?: boolean }) {
+  const cue = dual ? "pl-(--sp-dual-character)" : "pl-(--sp-character)";
   return (
     <div data-line={block.line}>
-      <p className={cn("uppercase", dual ? "pl-[1in]" : "pl-[2.2in]")}>
+      <p className={cn("uppercase", cue)}>
         {block.character}
         {block.extension && ` ${block.extension}`}
         {block.contd && !/CONT['’]D/i.test(block.extension ?? "") && " (CONT'D)"}
@@ -22,18 +23,18 @@ function Dialogue({ block, dual = false }: { block: DialogueBlock; dual?: boolea
             "whitespace-pre-wrap",
             part.type === "parenthetical"
               ? dual
-                ? "ml-[0.5in] max-w-[2.2in]"
-                : "ml-[1.6in] max-w-[2.6in]"
+                ? "ml-(--sp-dual-paren) max-w-(--sp-dual-paren-w)"
+                : "ml-(--sp-paren) max-w-(--sp-paren-w)"
               : dual
-                ? "max-w-[2.8in]"
-                : "ml-[1in] max-w-[3.5in]",
+                ? "ml-(--sp-dual-dialogue) max-w-(--sp-dual-dialogue-w)"
+                : "ml-(--sp-dialogue) max-w-(--sp-dialogue-w)",
             part.type === "lyrics" && "italic",
           )}
         >
           <InlineText text={part.text} />
         </p>
       ))}
-      {block.more && <p className={dual ? "pl-[1in]" : "pl-[2.2in]"}>(MORE)</p>}
+      {block.more && <p className={cue}>(MORE)</p>}
     </div>
   );
 }
@@ -43,7 +44,7 @@ interface PageElementViewProps {
   showSceneNumbers: boolean;
 }
 
-/** One printable element on a screenplay page. */
+/** One screenplay element, positioned by the surrounding layout's geometry. */
 export function PageElementView({ element, showSceneNumbers }: PageElementViewProps) {
   switch (element.kind) {
     case "scene_heading":
@@ -51,8 +52,10 @@ export function PageElementView({ element, showSceneNumbers }: PageElementViewPr
         <h3 data-line={element.line} className="relative font-bold uppercase">
           {showSceneNumbers && (
             <>
-              <span className="absolute -left-[0.75in] select-none">{element.sceneNumber}</span>
-              <span className="absolute -right-[0.6in] select-none">{element.sceneNumber}</span>
+              <span className="absolute left-(--sp-scene-left) select-none">{element.sceneNumber}</span>
+              <span className="absolute right-(--sp-scene-right) select-none [display:var(--sp-scene-right-display)]">
+                {element.sceneNumber}
+              </span>
             </>
           )}
           <InlineText text={element.text} />
@@ -78,7 +81,7 @@ export function PageElementView({ element, showSceneNumbers }: PageElementViewPr
       );
     case "lyrics":
       return (
-        <p data-line={element.line} className="ml-[1in] italic">
+        <p data-line={element.line} className="ml-(--sp-lyrics) italic">
           <InlineText text={element.text} />
         </p>
       );
@@ -86,7 +89,7 @@ export function PageElementView({ element, showSceneNumbers }: PageElementViewPr
       return <Dialogue block={element} />;
     case "dual_dialogue":
       return (
-        <div data-line={element.line} className="grid grid-cols-2 gap-[0.2in]">
+        <div data-line={element.line} className="grid gap-(--sp-dual-gap) [grid-template-columns:var(--sp-dual-cols)]">
           <Dialogue block={element.left} dual />
           <Dialogue block={element.right} dual />
         </div>

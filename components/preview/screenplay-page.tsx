@@ -1,10 +1,12 @@
 import { memo, type CSSProperties, type ReactNode } from "react";
 import type { Page, PaperSize } from "@/lib/fountain";
+import { PAGE_GEOMETRY } from "./geometry";
 import { PageElementView } from "./page-element";
 
 /** CSS geometry for one sheet of paper; the line height matches the paginator's budget. */
 export function paperStyle(paper: PaperSize): CSSProperties {
   return {
+    ...PAGE_GEOMETRY,
     width: `${paper.widthIn}in`,
     height: `${paper.heightIn}in`,
     ["--line" as string]: `${(paper.heightIn - 2) / paper.linesPerPage}in`,

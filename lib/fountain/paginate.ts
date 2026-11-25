@@ -150,10 +150,28 @@ export interface PaginateOptions {
   strategy?: PaginationStrategy;
 }
 
+/** Lays out pre-built blocks onto pages (lets callers reuse the blocks). */
+export function paginateBlocks(blocks: readonly Block[], options: PaginateOptions = {}): Page[] {
+  const { paper = PAPER_SIZES.letter, strategy = lineBasedPagination } = options;
+  return strategy.paginate(blocks, { linesPerPage: paper.linesPerPage });
+}
+
 /** Lays out script tokens onto pages. */
 export function paginate(tokens: readonly Token[], options: PaginateOptions = {}): Page[] {
-  const { paper = PAPER_SIZES.letter, strategy = lineBasedPagination } = options;
-  return strategy.paginate(buildBlocks(tokens), { linesPerPage: paper.linesPerPage });
+  return paginateBlocks(buildBlocks(tokens), options);
+}
+
+/**
+ * Maps the source line of each page's first element to its page number, so a
+ * continuous (unpaginated) view can show where printed pages begin.
+ */
+export function pageStartLines(pages: readonly Page[]): Map<number, number> {
+  const starts = new Map<number, number>();
+  for (const page of pages) {
+    const first = page.elements[0];
+    if (first && !starts.has(first.line)) starts.set(first.line, page.number);
+  }
+  return starts;
 }
 
 /** One-based page number containing a source line (1 when before any content). */

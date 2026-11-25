@@ -20,7 +20,7 @@ function OutlineEntry({ item, active, onSelect }: { item: OutlineItem; active: b
       onClick={() => onSelect(item.line)}
       aria-current={active ? "location" : undefined}
       className={cn(
-        "flex w-full items-baseline gap-2 rounded-md px-2 py-1 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50",
+        "flex w-full items-baseline gap-2 rounded-md px-2 py-2 text-left text-sm md:py-1 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50",
         active && "bg-accent text-accent-foreground",
         item.kind === "section" && "mt-3 font-semibold text-(--script-accent)",
         item.kind === "synopsis" && "text-xs text-muted-foreground italic",

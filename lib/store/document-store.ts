@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import {
+  buildBlocks,
   buildOutline,
   computeStats,
-  paginate,
+  paginateBlocks,
   parseFountain,
   PAPER_SIZES,
+  type Block,
   type OutlineItem,
   type Page,
   type PaperSize,
@@ -24,6 +26,8 @@ export interface NavigationRequest {
 
 interface Derived {
   script: ParsedScript;
+  /** Unpaginated layout blocks (used by the continuous reading view). */
+  blocks: Block[];
   pages: Page[];
   outline: OutlineItem[];
   stats: ScriptStats;
@@ -56,9 +60,11 @@ export interface DocumentState extends Derived {
 
 function derive(text: string, paper: PaperSize): Derived {
   const script = parseFountain(text);
+  const blocks = buildBlocks(script.tokens);
   return {
     script,
-    pages: paginate(script.tokens, { paper }),
+    blocks,
+    pages: paginateBlocks(blocks, { paper }),
     outline: buildOutline(script.tokens),
     stats: computeStats(script.tokens),
   };

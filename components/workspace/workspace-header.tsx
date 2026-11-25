@@ -18,6 +18,7 @@ import {
   SaveIcon,
   SearchIcon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +40,7 @@ import { useIsMac } from "@/hooks/use-platform";
 import { PAPER_SIZES } from "@/lib/fountain";
 import { shortcutLabel } from "@/lib/format";
 import { useDocumentStore } from "@/lib/store/document-store";
-import { FONT_SIZES, useSettingsStore, type FontSize, type ViewMode } from "@/lib/store/settings-store";
+import { FONT_SIZES, useSettingsStore, type FontSize, type ReaderLayout, type ViewMode } from "@/lib/store/settings-store";
 import { SHORTCUTS, type WorkspaceCommands } from "./workspace-commands";
 
 const VIEW_MODES = [
@@ -85,17 +86,21 @@ function IconButton({
   onClick,
   children,
   pressed,
+  className,
 }: {
   label: string;
   shortcut?: string;
   onClick(): void;
   children: React.ReactNode;
   pressed?: boolean;
+  className?: string;
 }) {
   const isMac = useIsMac();
   return (
     <Tooltip>
-      <TooltipTrigger render={<Button variant="ghost" size="icon" aria-label={label} aria-pressed={pressed} onClick={onClick} />}>
+      <TooltipTrigger
+        render={<Button variant="ghost" size="icon" aria-label={label} aria-pressed={pressed} onClick={onClick} className={className} />}
+      >
         {children}
       </TooltipTrigger>
       <TooltipContent>
@@ -110,10 +115,24 @@ interface WorkspaceHeaderProps {
   commands: WorkspaceCommands;
   canSaveInPlace: boolean;
   viewMode: ViewMode;
+  isMobile: boolean;
 }
 
+const READER_LAYOUTS = [
+  { value: "auto", label: "Automatic" },
+  { value: "pages", label: "Printed pages" },
+  { value: "flow", label: "Continuous (mobile-friendly)" },
+] as const satisfies ReadonlyArray<{ value: ReaderLayout; label: string }>;
+
+const THEMES = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+] as const;
+
 /** Workspace toolbar: navigation, title and save state, view switcher, commands. */
-export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ commands, canSaveInPlace, viewMode, isMobile }: WorkspaceHeaderProps) {
+  const { theme = "system", setTheme } = useTheme();
   const title = useDocumentStore((s) => s.meta?.title ?? "");
   const fileName = useDocumentStore((s) => s.meta?.fileName ?? "");
   const settings = useSettingsStore();
@@ -121,11 +140,16 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
   const sc = (combo: string) => shortcutLabel(combo, isMac);
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-background px-2">
+    <header className="flex h-[calc(3rem+env(safe-area-inset-top))] shrink-0 items-center gap-1 border-b bg-background px-2 pt-[env(safe-area-inset-top)]">
       <IconButton label="Back to home" onClick={commands.goHome}>
         <ArrowLeftIcon />
       </IconButton>
-      <IconButton label="Toggle outline" shortcut={SHORTCUTS.toggleOutline} onClick={commands.toggleOutline} pressed={settings.showOutline}>
+      <IconButton
+        label="Toggle outline"
+        shortcut={SHORTCUTS.toggleOutline}
+        onClick={commands.toggleOutline}
+        pressed={isMobile ? undefined : settings.showOutline}
+      >
         <PanelLeftIcon />
       </IconButton>
 
@@ -146,9 +170,8 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
           value={[viewMode]}
           onValueChange={(value: string[]) => value[0] && commands.setViewMode(value[0] as ViewMode)}
           aria-label="View mode"
-          className="hidden sm:flex"
         >
-          {VIEW_MODES.map(({ value, label, Icon }) => (
+          {VIEW_MODES.filter((mode) => !isMobile || mode.value !== "split").map(({ value, label, Icon }) => (
             <ToggleGroupItem key={value} value={value} aria-label={`${label} view`}>
               <Icon />
               <span className="hidden md:inline">{label}</span>
@@ -156,7 +179,7 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
           ))}
         </ToggleGroup>
 
-        <IconButton label="Command palette" shortcut={SHORTCUTS.palette} onClick={commands.showPalette}>
+        <IconButton label="Command palette" shortcut={SHORTCUTS.palette} onClick={commands.showPalette} className="hidden sm:inline-flex">
           <SearchIcon />
         </IconButton>
 
@@ -169,7 +192,7 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More options" />}>
             <MoreVerticalIcon />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={commands.save}>
                 <SaveIcon /> {canSaveInPlace ? "Save" : "Save (download)"}
@@ -204,11 +227,25 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Editor text size</DropdownMenuLabel>
+              <DropdownMenuLabel>Text size</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={settings.fontSize} onValueChange={(value: FontSize) => settings.setFontSize(value)}>
                 {FONT_SIZES.map((size) => (
                   <DropdownMenuRadioItem key={size} value={size}>
                     {size}px
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Reading layout</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={settings.readerLayout}
+                onValueChange={(value: ReaderLayout) => commands.setReaderLayout(value)}
+              >
+                {READER_LAYOUTS.map(({ value, label }) => (
+                  <DropdownMenuRadioItem key={value} value={value} closeOnClick>
+                    {label}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
@@ -224,10 +261,25 @@ export function WorkspaceHeader({ commands, canSaveInPlace, viewMode }: Workspac
                 ))}
               </DropdownMenuRadioGroup>
             </DropdownMenuGroup>
+            {isMobile && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={theme} onValueChange={(value: string) => setTheme(value)}>
+                    {THEMES.map(({ value, label }) => (
+                      <DropdownMenuRadioItem key={value} value={value} closeOnClick>
+                        {label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <ThemeToggle />
+        {!isMobile && <ThemeToggle />}
       </div>
     </header>
   );

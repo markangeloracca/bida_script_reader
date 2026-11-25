@@ -18,3 +18,10 @@ export function useMediaQuery(query: string, serverValue = true): boolean {
     () => serverValue,
   );
 }
+
+/** Below Tailwind's `md` breakpoint: phones and small tablets in portrait. */
+export const MOBILE_QUERY = "(max-width: 767px)";
+
+export function useIsMobile(): boolean {
+  return useMediaQuery(MOBILE_QUERY, false);
+}

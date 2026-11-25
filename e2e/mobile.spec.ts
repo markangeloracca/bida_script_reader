@@ -47,13 +47,15 @@ for (const device of DEVICES) {
       await chooseFile(page, { name: "draft.fountain", mimeType: "application/octet-stream", buffer: Buffer.from(SCRIPT) });
       await expect(page).toHaveURL(/\/script\//);
       await expect(page.getByRole("heading", { name: "Mobile Draft" })).toBeVisible();
-      await expect(page.locator(".cm-content")).toContainText("INT. CAFE - DAY");
+      // iPad opens in split view, phones in the reading view: either way the script is shown.
+      await expect(page.getByText("INT. CAFE - DAY").first()).toBeVisible();
     });
 
     test("opens a text file whose provider dropped the extension", async ({ page }) => {
       await chooseFile(page, { name: "Mobile Draft", mimeType: "", buffer: Buffer.from(SCRIPT) });
       await expect(page).toHaveURL(/\/script\//);
-      await expect(page.locator(".cm-content")).toContainText("INT. CAFE - DAY");
+      // iPad opens in split view, phones in the reading view: either way the script is shown.
+      await expect(page.getByText("INT. CAFE - DAY").first()).toBeVisible();
     });
 
     test("rejects files that are not Fountain scripts", async ({ page }) => {
@@ -63,3 +65,45 @@ for (const device of DEVICES) {
     });
   });
 }
+
+test.describe("Reading on a phone", () => {
+  test.use({ userAgent: DEVICES[1].userAgent, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("opens in a readable, reflowed layout", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Try the sample" }).tap();
+    await expect(page).toHaveURL(/\/script\//);
+
+    // Phones open in Read view (split is not offered) with the continuous layout.
+    const flow = page.locator("[data-layout=flow]");
+    await expect(flow).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Screenplay editor" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Split view" })).toHaveCount(0);
+    await expect(page.locator(".screenplay-page")).toHaveCount(0);
+
+    // Comfortable type, no sideways scrolling, and page markers for reference.
+    const fontSize = await flow.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(fontSize).toBeGreaterThanOrEqual(14);
+    const overflows = await flow.evaluate((el) => {
+      const scroller = el.closest(".overflow-auto") as HTMLElement;
+      return scroller.scrollWidth > scroller.clientWidth || document.documentElement.scrollWidth > window.innerWidth;
+    });
+    expect(overflows).toBe(false);
+    await expect(page.getByRole("separator", { name: "Page 2" })).toBeAttached();
+
+    // The status bar follows the reading position.
+    await flow.getByRole("heading", { name: /LIGHTHOUSE GALLERY/ }).evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await expect(page.getByText(/Scene 4: EXT\. LIGHTHOUSE GALLERY/)).toBeVisible();
+  });
+
+  test("outline jumps to a scene and edit view is one tap away", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Try the sample" }).tap();
+    await page.getByRole("button", { name: "Toggle outline" }).tap();
+    await page.getByRole("navigation", { name: "Script outline" }).getByText("INT. LIGHTHOUSE - LAMP ROOM - NIGHT").tap();
+    await expect(page.locator("[data-layout=flow]").getByRole("heading", { name: /LAMP ROOM/ })).toBeInViewport();
+
+    await page.getByRole("button", { name: "Edit view" }).tap();
+    await expect(page.getByRole("textbox", { name: "Screenplay editor" })).toBeVisible();
+  });
+});
